@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Check ip configuration of a Linux instance.",
+  "parameters": {
+
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "apacheRestart",
+      "precondition": {
+        "StringEquals": [
+          "platformType",
+          "Linux"
+        ]
+      },
+      "inputs": {
+        "runCommand": [
+          "ifconfig"
+        ]
+      }
+    }
+  ]
+}
