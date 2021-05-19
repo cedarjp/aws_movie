@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{% endblock title %}
+
+{% block extra_css %}
+  <style>
+      .login-form{
+          width: 600px;
+          margin: 0 auto;
+          padding: 10px;
+      }
+  </style>
+{% endblock %}
+
+{% block content %}
+  {% if form.errors %}
+    <p class="text-center">あなたのユーザー名とパスワードが一致しませんでした。もう一度お試しください。</p>
+  {% endif %}
+
+  {% if next %}
+    {% if user.is_authenticated %}
+      <p class="text-center">あなたのアカウントはこのページにアクセスできません。続行するには、アクセス権のあるアカウントでログインしてください。</p>
+    {% else %}
+      <p class="text-center">このページを見るにはログインしてください。</p>
+    {% endif %}
+  {% endif %}
+
+  <div class="login-form">
+    <form method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+      <input type="hidden" name="next" value="{{ next }}" />
+      {% buttons %}
+        <div class="text-center">
+          <input type="submit" value="ログイン" class="btn btn-xs btn-default" />
+          {#<p><a href="{% url 'password_reset' %}">Lost password?</a></p>#}
+        </div>
+      {% endbuttons %}
+    </form>
+  </div>
+
+  {# Assumes you setup the password_reset view in your URLconf #}
+
+{% endblock content %}

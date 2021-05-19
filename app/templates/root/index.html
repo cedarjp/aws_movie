@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{% endblock title %}
+
+{% block extra_css %}
+<style>
+    .current-state{
+        margin: 10px 0 50px 0;
+        padding: 10px 0;
+        border-bottom: black solid 2px;
+    }
+    .state-box{
+        width: 120px;
+        height: 80px;
+        margin: 10px;
+    }
+    .m-state-box{
+        width: 80px;
+        height: 40px;
+        margin: 10px;
+    }
+    .normal-state{
+        background-color: aquamarine;
+    }
+    .fault-state{
+        background-color: indianred;
+    }
+    .work-state{
+        background-color: gray;
+    }
+    .status-type{
+        display: flex;
+        align-items: center;
+        height: 100px;
+    }
+    .video {
+        height: 150px;
+    }
+</style>
+<link href="http://vjs.zencdn.net/7.4.1/video-js.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="current-state">
+    <div class="row">
+        <div class="col-xs-2">
+            <div id="current-panel" class="{{ last_object.get_state_css_class }} state-box panel">
+            </div>
+        </div>
+        <div class="col-xs-1 status-type">
+            <p id="current-state-value">{{ last_object.get_state_type_display }}</p>
+        </div>
+        <div class="col-xs-6">
+            {% if last_object.movie_url %}
+            <video class="video-js auto" controls preload="auto" width="384" height="216"
+                   poster="{% if last_object.thumb_url %}{{ last_object.thumb_url }}{% endif %}" data-setup="{}">
+                <source src="{{ last_object.movie_url }}" type='application/x-mpegURL'>
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a web browser that
+                    <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
+            </video>
+            {% endif %}
+        </div>
+        <div class="col-xs-3 text-left">
+            {% if last_object.update_time %}
+                <p id="current-update-time">{{ last_object.update_time_str }}</p>
+                <p>{{ last_object.location.name }}</p>
+                <p><a class="btn btn-primary" href="{% url 'app:detail' last_object.pk %}">詳細</a></p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<table>
+    {% for obj in object_list %}
+    <tr>
+        <td>
+            <div class="{{ obj.get_state_css_class }} m-state-box panel">
+            </div>
+        </td>
+        <td style="padding:0 20px;">{{ obj.get_state_type_display }}</td>
+        <td style="padding:0 20px;" class="video">
+            {% if obj.movie_url %}
+            <video class="video-js auto" controls preload="auto" width="256" height="144"
+                   poster="{% if obj.thumb_url %}{{ obj.thumb_url }}{% endif %}" data-setup="{}">
+                <source src="{{ obj.movie_url }}" type='application/x-mpegURL'>
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a web browser that
+                    <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
+            </video>
+            {% endif %}
+        </td>
+        <td style="padding:0 20px;">
+            {% if obj.update_time %}
+            <p>{{ obj.update_time_str }}</p>
+            <p>{{ obj.location.name }}</p>
+            <p><a class="btn btn-primary" href="{% url 'app:detail' obj.pk %}">詳細</a></p>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<div class="text-center">
+    {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+</div>
+{% block extra_js %}
+<script src="http://vjs.zencdn.net/7.4.1/video.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.15.0/videojs-contrib-hls.js"></script>
+{% endblock %}
+{% endblock content %}

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}{% endblock title %}
+
+{% block extra_css %}
+<style>
+    .current_state{
+        margin: 10px 0 50px 0;
+        padding: 10px 0;
+    }
+    .state-box{
+        width: 120px;
+        height: 80px;
+        margin: 10px;
+    }
+    .normal-state{
+        background-color: aquamarine;
+    }
+    .fault-state{
+        background-color: indianred;
+    }
+    .work-state{
+        background-color: gray;
+    }
+    .thumb_box{
+        padding-left: 45px;
+        width: 1095px !important;
+        overflow:hidden;
+    }
+    .thumb_img{
+        width: 80px;
+        float: left;
+        margin-left: -45px;
+    }
+    .state_time{
+        margin: 10px;
+    }
+    .state_bar_child{
+        height: 10px;
+        float: left;
+    }
+    table.update_form_time{
+        margin: 0 auto;
+    }
+    table.update_form_time td{
+        padding:5px 10px;
+    }
+    #current_state_value{
+        margin: 10px;
+    }
+    #current_panel{
+        margin: 0 auto;
+    }
+    #state_bar{
+        width: 1095px;
+        overflow: hidden;
+    }
+    #update_form input{
+        width: 80px;
+    }
+</style>
+<link href="http://vjs.zencdn.net/7.4.1/video-js.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="current_state">
+    <div class="row">
+        <div class="col-xs-4 text-center">
+            <div id="current_panel" class="{{ object.get_state_css_class }} state-box panel">
+            </div>
+            <p>
+                <span id="current_state_value">{{ object.get_state_type_display }}</span>&nbsp;
+                <span id="state_reason"></span>
+            </p>
+            <p class="state_time">
+                <span id="start_hour">00</span>:<span id="start_minutes">00</span>:<span id="start_sec">00</span>〜
+                <span id="end_hour">00</span>:<span id="end_minutes">00</span>:<span id="end_sec">00</span><br>
+                <button id="update_button" data-toggle="modal" data-target="#update_modal" class="btn btn-primary btn-xs">
+                    変更する
+                </button>
+            </p>
+            <div class="modal fade" id="update_modal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal"><span>×</span></button>
+                            <h4 class="modal-title">変更内容を入力してください</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p id="modal_play_time">00:00:00</p>
+                            <form id="update_form" action="" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="state_id" value="{{ object.pk }}">
+                                <input type="hidden" name="location_id" value="{{ object.location_id }}">
+                                <input type="hidden" name="index" value="">
+                                <table class="update_form_time">
+                                    <tr>
+                                        <td>開始</td>
+                                        <td><input class="form-control" type="number" name="start_hour" value=""></td>
+                                        <td>:</td>
+                                        <td><input class="form-control" type="number" name="start_minutes" value=""></td>
+                                        <td>:</td>
+                                        <td><input class="form-control" type="number" name="start_sec" value=""></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>終了</td>
+                                        <td><input class="form-control" type="number" name="end_hour" value=""></td>
+                                        <td>:</td>
+                                        <td><input class="form-control" type="number" name="end_minutes" value=""></td>
+                                        <td>:</td>
+                                        <td><input class="form-control" type="number" name="end_sec" value=""></td>
+                                    </tr>
+                                    <tr>
+                                        <td>状態</td>
+                                        <td colspan="5">
+                                            <select class="form-control" name="state_type">
+                                                {% for key, val in status_types %}
+                                                <option value="{{ key }}">{{ val }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>理由</td>
+                                        <td colspan="5">
+                                            <select class="form-control" name="reason">
+                                                {% for key, val in reason_list %}
+                                                <option value="{{ key }}">{{ val }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">閉じる</button>
+                            <button id="update_submit_button" type="button" class="btn btn-primary btn-sm">変更する</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-6">
+            {% if object.movie_url %}
+            <p id="current_play_time">00:00:00</p>
+            <video id="video" class="video-js auto" controls preload="auto" width="384" height="216"
+                   poster="{% if object.thumb_url %}{{ object.thumb_url }}{% endif %}" data-setup="{}">
+                <source src="{{ object.movie_url }}" type='application/x-mpegURL'>
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a web browser that
+                    <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
+            </video>
+            {% endif %}
+        </div>
+        <div class="col-xs-2">
+            {% if object.update_time %}
+                <p id="current-update-time">{{ object.update_time_str }}</p>
+                <p>{{ object.location.name }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<div class="thumb_box">
+    {% if object.get_thumb_url_list %}
+        {% for thumb_url in object.get_thumb_url_list %}
+            <img src="{{ thumb_url }}" class="thumb_img" data-index="{{ forloop.counter }}">
+        {% endfor %}
+    {% endif %}
+</div>
+<div id="state_bar">
+</div>
+{% block extra_js %}
+<script src="http://vjs.zencdn.net/7.4.1/video.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.15.0/videojs-contrib-hls.js"></script>
+<script type="text/javascript">
+    let state_list = JSON.parse('{{ object.get_state_list_json|safe }}');
+    let current_index = 0;
+    let next_sec = parseFloat(state_list['state_list'][current_index]['end']);
+    const options = {
+      playbackRates: [0.5, 1, 1.5, 2, 5, 10],
+      language: 'ja',
+      autoSetup: true,
+      seek_param: "time"
+    };
+    const player = videojs('video', options);
+    // events https://gist.github.com/alecsgone/a6db03bade4dc405a61c63294a64f97a
+
+    // プレイヤー表示時のイベント
+    player.on('ready', function(){
+      updateStateBar();
+      updateState(current_index);
+    });
+
+    // 再生時のイベント
+    player.on('play', function(){
+      updateCurrentIndex();
+    });
+
+    // 時間更新時のイベント 1秒ごとに動くはず
+    player.on('timeupdate', function(){
+      updatePlayTime('#current_play_time');
+      if(player.currentTime() >= next_sec){
+        current_index = parseInt(current_index) + 1;
+        next_sec = parseFloat(state_list['state_list'][current_index]['end']);
+        updateState(current_index);
+      }
+    });
+
+    // 画像クリック時の処理
+    $('.thumb_img').on('click', function(){
+      const thumb_index = $(this).data('index');
+      player.currentTime(state_list['thumb_state'][thumb_index]['seek_sec']);
+      current_index = state_list['thumb_state'][thumb_index]['state_list_index'];
+      next_sec = parseFloat(state_list['state_list'][current_index]['end']);
+      updateState(current_index);
+    });
+
+    $('#update_button').on('click', function(){
+      player.pause();
+      updatePlayTime('#modal_play_time');
+    });
+    // 状態の更新処理
+    $('#update_submit_button').on('click', function () {
+      const form = $('#update_form');
+      $.ajax({
+        url: "{% url 'app:update_state' %}",
+        data: form.serialize(),
+        type: 'POST',
+        dataType: 'json'
+      }).done(function(data){
+        state_list = data;
+        updateStateBar();
+        updateCurrentIndex();
+        $('body').removeClass('modal-open'); // 1
+        $('.modal-backdrop').remove();       // 2
+        $('#update_modal').modal('hide');        // 3
+      });
+    });
+
+    // 時間表示用2桁のゼロ埋め
+    const zeroPadding = function(val){
+      return ('00' + val).slice(-2);
+    };
+
+    // 再生時間表示の更新処理
+    const updatePlayTime = function(id){
+      const current_time =  parseInt(player.currentTime());
+      const current_hour = zeroPadding(Math.floor(current_time / 3600));
+      const current_min = zeroPadding(Math.floor(current_time % 3600 / 60));
+      const current_sec = zeroPadding(Math.floor(current_time % 3600 % 60));
+      $(id).text(current_hour + ':' + current_min + ':' + current_sec);
+    };
+
+    // 状態表示の更新処理
+    const updateState = function(state_index){
+      if (state_list['state_list'][state_index]['reason']){
+        $('#state_reason').text('(' + state_list['state_list'][state_index]['reason']+')');
+      }else{
+        $('#state_reason').text('');
+      }
+      $('#start_hour').text(zeroPadding(state_list['state_list'][state_index]['start_hour']));
+      $('#start_minutes').text(zeroPadding(state_list['state_list'][state_index]['start_minutes']));
+      $('#start_sec').text(zeroPadding(state_list['state_list'][state_index]['start_sec']));
+      $('#end_hour').text(zeroPadding(state_list['state_list'][state_index]['end_hour']));
+      $('#end_minutes').text(zeroPadding(state_list['state_list'][state_index]['end_minutes']));
+      $('#end_sec').text(zeroPadding(state_list['state_list'][state_index]['end_sec']));
+      $('#current_state_value').text(state_list['state_list'][state_index]['state_type_display']);
+      const current_panel = $('#current_panel');
+      current_panel.removeClass('fault-state');
+      current_panel.removeClass('normal-state');
+      current_panel.addClass(state_list['state_list'][state_index]['state_css_class']);
+      $('input[name="index"]').val(state_index);
+      $('input[name="start_hour"]').val(state_list['state_list'][state_index]['start_hour']);
+      $('input[name="start_minutes"]').val(state_list['state_list'][state_index]['start_minutes']);
+      $('input[name="start_sec"]').val(state_list['state_list'][state_index]['start_sec']);
+      $('input[name="end_hour"]').val(state_list['state_list'][state_index]['end_hour']);
+      $('input[name="end_minutes"]').val(state_list['state_list'][state_index]['end_minutes']);
+      $('input[name="end_sec"]').val(state_list['state_list'][state_index]['end_sec']);
+      $('select[name="state_type"]').val(state_list['state_list'][state_index]['state_type']);
+    };
+
+    // 現在の状態更新
+    const updateCurrentIndex = function(){
+      const current_time = player.currentTime();
+      for (let index in state_list['state_list'] ){
+        if(parseInt(state_list['state_list'][index]['start']) <= current_time && parseInt(state_list['state_list'][index]['end']) > current_time){
+          current_index = index;
+          next_sec = parseFloat(state_list['state_list'][current_index]['end']);
+          updateState(current_index);
+          break;
+        }
+      }
+    };
+
+    // サムネイル下の状態バー更新
+    const updateStateBar = function(){
+      const state_bar = $('#state_bar');
+      state_bar.empty();
+      for (let index in state_list['state_bar_data'] ){
+        state_bar.append('<div class="state_bar_child" style="width: ' + state_list["state_bar_data"][index]['width'] + 'px;background-color: '+ state_list["state_bar_data"][index]['color'] +';" data-index="'+ index +'";></div>')
+      }
+      // バークリック時の処理
+      $('.state_bar_child').on('click', function(){
+        current_index = $(this).data('index');
+        player.currentTime(state_list['state_list'][current_index]['start']);
+        next_sec = parseFloat(state_list['state_list'][current_index]['end']);
+        updateState(current_index);
+      });
+    }
+
+</script>
+{% endblock %}
+{% endblock content %}

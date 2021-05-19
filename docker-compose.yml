@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    links:
+      - redis
+      - mysql
+    volumes:
+      - ./:/app
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    restart: always
+    command: bash -c "/app/manage.py makemigrations && /app/manage.py migrate && /app/manage.py runserver 0.0.0.0:8000"
+  mysql:
+    build: docker-components/mysql
+    restart: always
+    volumes:
+      - ./docker-components/mysql/volumes:/var/lib/mysql
+      - ./docker-components/mysql/initdb.d:/docker-entrypoint-initdb.d
+    env_file:
+      - .env
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    restart: always

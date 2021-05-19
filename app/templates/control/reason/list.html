@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{% endblock title %}
+
+{% block extra_css %}
+    <style>
+    </style>
+{% endblock %}
+{% block content %}
+    <div style="padding:10px;">
+        <a href="{% url 'app:control_reason_regist' location_id %}" class="btn btn-xs btn-default">登録</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+            </thead>
+                <tr>
+                    <th>ID</th>
+                    <th>理由</th>
+                    <th>登録日時</th>
+                    <th>変更</th>
+                    <th>削除</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for obj in object_list %}
+                <tr>
+                    <td>{{ obj.id }}</td>
+                    <td>{{ obj.reason }}</td>
+                    <td>{{ obj.created_str }}</td>
+                    <th><a href="{% url 'app:control_reason_update' obj.location_id obj.pk %}">変更</a></th>
+                    <th>
+                        {% with obj.get_delete_form as form %}
+                            <form method="post" action="{% url 'app:control_reason_delete' obj.location_id obj.pk %}">
+                                {% csrf_token %}
+                                {% bootstrap_form form %}
+                                {% buttons %}
+                                    <input type="submit" value="削除" class="btn btn-xs btn-default" />
+                                {% endbuttons %}
+                            </form>
+                        {% endwith %}
+                    </th>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="text-center">
+        {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+    </div>
+{% endblock content %}

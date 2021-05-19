@@ -1,0 +1,53 @@
+version: "3"
+
+services:
+  uwsgi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    links:
+      - redis
+    env_file:
+      - .env
+    volumes:
+      - ./docker_volumes/static:/app/static
+      - ./:/app
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "ap-northeast-1"
+        awslogs-group: "uwsgi"
+        tag: '{{ with split .ImageName ":" }}{{join . "_"}}{{end}}-{{.ID}}'
+        awslogs-create-group: "true"
+    restart: always
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "ap-northeast-1"
+        awslogs-group: "redis"
+        tag: '{{ with split .ImageName ":" }}{{join . "_"}}{{end}}-{{.ID}}'
+        awslogs-create-group: "true"
+    restart: always
+  nginx:
+    build:
+      context: nginx
+    links:
+      - uwsgi
+    volumes_from:
+      - uwsgi
+    volumes:
+      - ./docker_volumes/static:/app/static
+    ports:
+      - 80:80
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "ap-northeast-1"
+        awslogs-group: "nginx"
+        tag: '{{ with split .ImageName ":" }}{{join . "_"}}{{end}}-{{.ID}}'
+        awslogs-create-group: "true"
+    restart: always
